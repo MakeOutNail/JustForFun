@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
-#include <cmath>
 #include <format>
 #include <exception>
 #include "files/header.h"
@@ -10,11 +9,12 @@
 #include <string_view>
 #include <stdexcept>
 
+#include "files/cpustate.h"
+
 // User receives a hex code string literal
 int main(int argc, char* argv[]) {
 
     try {
-
 
         // argc is always 1 (the program itself) it can not be zero
         // returns 0 or 1; 0 means END OF FILE (EOF)
@@ -23,12 +23,29 @@ int main(int argc, char* argv[]) {
             return -1;
         }
 
+        if (std::string_view(argv[1])=="--cpu-state") {
+            // Representative DMG state after boot with a nonzero cartridge header checksum.
+            CpuState cpu_state{0x01, 0x00, 0x13, 0x00, 0xD8, 0x01, 0x4D, 0xFFFE, 0x0100, 0xB0};
+
+            std::cout << std::format("A=0x{:02X} F=0x{:02X} AF=0x{:04X}", cpu_state.get_a(), cpu_state.get_f(), cpu_state.get_af()) << std::endl;
+            std::cout << std::format("B=0x{:02X} C=0x{:02X} BC=0x{:04X}", cpu_state.get_b(), cpu_state.get_c(), cpu_state.get_bc()) << std::endl;
+            std::cout << std::format("D=0x{:02X} E=0x{:02X} DE=0x{:04X}", cpu_state.get_d(), cpu_state.get_e(), cpu_state.get_de()) << std::endl;
+            std::cout << std::format("H=0x{:02X} L=0x{:02X} HL=0x{:04X}", cpu_state.get_h(), cpu_state.get_l(), cpu_state.get_hl()) << std::endl;
+            std::cout << std::format("PC=0x{:04X} SP=0x{:04X}", cpu_state.get_pc(), cpu_state.get_sp()) << std::endl;
+            std::cout << std::format("Z={} N={} H={} C={}",
+                static_cast<int>(cpu_state.get_flag(FlagType::Z)),
+                static_cast<int>(cpu_state.get_flag(FlagType::N)),
+                static_cast<int>(cpu_state.get_flag(FlagType::H)),
+                static_cast<int>(cpu_state.get_flag(FlagType::C))) << std::endl;
+
+            return 0;
+        }
+        
         if (argc > 3) {
             throw std::out_of_range(std::format("Invalid Argument: {}", argv[3]));
         }
 
         Rom rom {argv[1]};
-
 
 
 

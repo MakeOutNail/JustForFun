@@ -20,20 +20,20 @@ Rom::Rom(const std::string_view file_path) {
         throw std::runtime_error("File is smaller than 336 bytes!");
     }
 
-    byte_collection.resize(std::filesystem::file_size(file_path));
+    m_byte_collection.resize(std::filesystem::file_size(file_path));
     input.seekg(0);
 
-    if (!input.read(&byte_collection[0], static_cast<long>(file_size))) {
+    if (!input.read(&m_byte_collection[0], static_cast<long>(file_size))) {
         throw std::runtime_error(std::format("Couldn't read all the {} bytes!", file_size));
     }
 }
 
 
 size_t Rom::get_rom_byte_size() const {
-    return byte_collection.size();
+    return m_byte_collection.size();
 }
 
 unsigned char Rom::get_byte(size_t offset) const{
-    return static_cast<unsigned char>(byte_collection.at(offset));
+    return static_cast<unsigned char>(m_byte_collection.at(offset));
 }
 

@@ -10,7 +10,9 @@ add_executable(ProjectX main.cpp
         files/rom.cpp
         files/rom.h
         files/header.cpp
-        files/header.h)
+        files/header.h
+        files/cpustate.cpp
+        files/cpustate.h)
 
 
 # Enable Warnings

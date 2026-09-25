@@ -17,5 +17,5 @@ public:
      */
     [[nodiscard]] unsigned char get_byte(size_t offset) const;
 private:
-    std::vector<char> byte_collection;
+    std::vector<char> m_byte_collection;
 };
