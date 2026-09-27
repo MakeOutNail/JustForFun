@@ -9,6 +9,7 @@
 #include <string_view>
 #include <stdexcept>
 
+#include "files/cpu.h"
 #include "files/cpustate.h"
 
 // User receives a hex code string literal
@@ -46,7 +47,8 @@ int main(int argc, char* argv[]) {
         }
 
         Rom rom {argv[1]};
-
+        Cpu cpu{rom, CpuState{0x01, 0x00, 0x13, 0x00, 0xD8, 0x01, 0x4D, 0xFFFE, 0x0100, 0xB0}};
+        cpu.step();
 
 
         // Byte-Reader-Mode
