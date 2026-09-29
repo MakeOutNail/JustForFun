@@ -41,16 +41,57 @@ int main(int argc, char* argv[]) {
 
             return 0;
         }
-        
-        if (argc > 3) {
-            throw std::out_of_range(std::format("Invalid Argument: {}", argv[3]));
+
+
+
+        if (argc > 4) {
+            throw std::out_of_range(std::format("Invalid Argument: {}", argv[4]));
         }
 
         Rom rom {argv[1]};
         Ram ram{};
         MemoryBus memoryBus {rom, ram};
         Cpu cpu{memoryBus, CpuState{0x01, 0x00, 0x13, 0x00, 0xD8, 0x01, 0x4D, 0xFFFE, 0x0100, 0xB0}};
-        cpu.step();
+
+
+
+
+
+
+        if (argc==4) {
+
+            if (std::string_view(argv[2]) == "--steps") {
+
+                std::string_view tempArgument {argv[3]};
+                std::size_t steps {};
+                auto result = std::from_chars(tempArgument.begin(), tempArgument.end(),steps, 10);
+
+
+                if (result.ec != std::errc{} || result.ptr != tempArgument.end()) {
+                    throw std::invalid_argument("The conversion to integer went unsuccessful!");
+                }
+
+
+                std::size_t i {};
+                while (i<steps) {
+                    cpu.step();
+                    i++;
+                }
+
+                std::cout << "Steps completed: " << i << std::endl;
+                std::cout << std::format("PC: 0x{:04X}", cpu.get_CpuState().get_pc()) << std::endl;
+                std::cout << std::format("B: 0x{:02X} C: 0x{:02X}", cpu.get_CpuState().get_b(), cpu.get_CpuState().get_c())  << std::endl;
+                std::cout << std::format("Z: {} N: {} H: {} C: {}",
+                    static_cast<int>(cpu.get_CpuState().get_flag(FlagType::Z)),
+                    static_cast<int>(cpu.get_CpuState().get_flag(FlagType::N)),
+                    static_cast<int>(cpu.get_CpuState().get_flag(FlagType::H)),
+                    static_cast<int>(cpu.get_CpuState().get_flag(FlagType::C)))  << std::endl;
+
+                return 0;
+            }
+
+            throw std::invalid_argument(std::format("Unknown option: {} (expected --steps)", argv[2]));
+        }
 
 
         // Byte-Reader-Mode
