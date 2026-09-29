@@ -62,5 +62,5 @@ private:
 
     std::uint16_t m_sp; // Stack Pointer
     std::uint16_t m_pc; // Program Counter/Pointer
-    std::uint8_t m_f; // Flag
+    std::uint8_t m_f{}; // Flag
 };

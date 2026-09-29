@@ -1,16 +1,17 @@
 #pragma once
 #include "cpustate.h"
+#include "memorybus.h"
 #include "rom.h"
 
 
 
 class Cpu {
 public:
-    Cpu(const Rom& rom, CpuState cpuState);
+    Cpu(MemoryBus memoryBus, CpuState cpuState);
     CpuState& get_CpuState();
     void step();
 private:
-    const Rom& m_rom;
+    MemoryBus m_memoryBus;
     CpuState m_cpuState;
 
 };

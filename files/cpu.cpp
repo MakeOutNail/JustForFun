@@ -1,10 +1,9 @@
 #include "cpu.h"
 
 #include <format>
-#include <iostream>
 #include <stdexcept>
 
-Cpu::Cpu(const Rom &rom, CpuState cpuState) : m_rom(rom), m_cpuState(cpuState) {
+Cpu::Cpu(MemoryBus memoryBus, CpuState cpuState) : m_memoryBus(memoryBus), m_cpuState(cpuState) {
 
 }
 
@@ -16,7 +15,7 @@ void Cpu::step() {
 
 
 
-    unsigned char byte = m_rom.get_byte(m_cpuState.get_pc());
+    unsigned char byte = m_memoryBus.read(m_cpuState.get_pc());
 
 
 
@@ -30,24 +29,24 @@ void Cpu::step() {
         // JP a16: jump to the 16-bit address encoded after the opcode.
         // First operand byte is low; second operand byte is high (little-endian).
         case 195:
-            m_cpuState.set_pc((m_rom.get_byte(m_cpuState.get_pc()+2)<<8)|m_rom.get_byte(m_cpuState.get_pc()+1));
+            m_cpuState.set_pc((m_memoryBus.read(m_cpuState.get_pc()+2)<<8)|m_memoryBus.read(m_cpuState.get_pc()+1));
             break;
         // 0x20: JR NZ, e8 (it gives a distance to move)
         case 32:{
             m_cpuState.set_pc(m_cpuState.get_pc()+1);
-            auto offset = static_cast<std::int8_t>(m_rom.get_byte(m_cpuState.get_pc()));
+            auto offset = static_cast<std::int8_t>(m_memoryBus.read(m_cpuState.get_pc()));
             m_cpuState.set_pc(m_cpuState.get_pc()+1);
             if(m_cpuState.get_flag(FlagType::Z)==false)m_cpuState.set_pc(m_cpuState.get_pc()+offset);
             break;
         // 0x06 - LD B, n8 (load an 8-bit value into register B)
         }
         case 6:
-            m_cpuState.set_b(m_rom.get_byte(m_cpuState.get_pc()+1));
+            m_cpuState.set_b(m_memoryBus.read(m_cpuState.get_pc()+1));
             m_cpuState.set_pc(m_cpuState.get_pc()+2);
             break;
         // 0x0E - LD C,n8 (load an 8 bit value into register C)
         case 14:
-            m_cpuState.set_c(m_rom.get_byte(m_cpuState.get_pc()+1));
+            m_cpuState.set_c(m_memoryBus.read(m_cpuState.get_pc()+1));
             m_cpuState.set_pc(m_cpuState.get_pc()+2);
             break;
         // 0x04 - INC B (increment register B)
