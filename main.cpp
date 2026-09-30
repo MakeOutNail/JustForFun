@@ -80,6 +80,7 @@ int main(int argc, char* argv[]) {
 
                 std::cout << "Steps completed: " << i << std::endl;
                 std::cout << std::format("PC: 0x{:04X}", cpu.get_CpuState().get_pc()) << std::endl;
+                std::cout<< std::format("A: 0x{:02X} HL: 0x{:04X}", cpu.get_CpuState().get_a(), cpu.get_CpuState().get_hl()) << std::endl;
                 std::cout << std::format("B: 0x{:02X} C: 0x{:02X}", cpu.get_CpuState().get_b(), cpu.get_CpuState().get_c())  << std::endl;
                 std::cout << std::format("Z: {} N: {} H: {} C: {}",
                     static_cast<int>(cpu.get_CpuState().get_flag(FlagType::Z)),
