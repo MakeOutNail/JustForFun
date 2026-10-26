@@ -13,5 +13,9 @@ public:
 private:
     MemoryBus m_memoryBus;
     CpuState m_cpuState;
+    std::uint8_t readOperand(std::uint8_t opcode, std::uint8_t mask);
+    void setOperand(std::uint8_t opcode);
+    void arithmeticOperation(std::uint8_t opcode);
+    void loadOperation(std::uint8_t opcode);
 
 };
