@@ -18,7 +18,7 @@ CpuState& Cpu::get_CpuState() {
  * @details this function is for arithmetic operation to extract the source
  * @return value of the register
 */
-std::uint8_t Cpu::readOperand(std::uint8_t opcode, std::uint8_t mask){
+std::uint8_t Cpu::readOperand(std::uint8_t opcode, std::uint8_t mask) const{
     switch (opcode & mask) {
         case 0: return m_cpuState.get_b();
         case 1: return m_cpuState.get_c();
@@ -187,7 +187,6 @@ void Cpu::step() {
     // Checks opcode (specific operation) (family cases)
     switch (static_cast<unsigned int>(byte) & 0b11000000) {
         case 0b01000000: {
-
             // Halt Instruction to pause
             if (static_cast<unsigned int>(byte)==0x76) {
                 throw std::runtime_error(std::format("Unsupported opcode 0x76 at address 0x{:04X}", m_cpuState.get_pc()));
@@ -260,6 +259,102 @@ void Cpu::step() {
             m_cpuState.set_hl((m_memoryBus.read(m_cpuState.get_pc()+1) << 8) | m_memoryBus.read(m_cpuState.get_pc()));
             m_cpuState.set_pc(m_cpuState.get_pc()+2);
             break;
+
+        // LD SP, N16 (Load the next two bytes after 0x31)
+        case 0x31:
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            // shift the upper byte to the left and attach them with the or operator
+            m_cpuState.set_sp((m_memoryBus.read(m_cpuState.get_pc()+1)<<8) | m_memoryBus.read(m_cpuState.get_pc()));
+            m_cpuState.set_pc(m_cpuState.get_pc()+2);
+            break;
+        // push BC to the stack
+        case 0xC5:
+            m_cpuState.set_sp(m_cpuState.get_sp()-1);
+            m_memoryBus.write(m_cpuState.get_sp(), m_cpuState.get_b());
+            m_cpuState.set_sp(m_cpuState.get_sp()-1);
+            m_memoryBus.write(m_cpuState.get_sp(), m_cpuState.get_c());
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+        // push DE to the stack
+        case 0xD5:
+            m_cpuState.set_sp(m_cpuState.get_sp()-1);
+            m_memoryBus.write(m_cpuState.get_sp(), m_cpuState.get_d());
+            m_cpuState.set_sp(m_cpuState.get_sp()-1);
+            m_memoryBus.write(m_cpuState.get_sp(), m_cpuState.get_e());
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+        // push HL to the stack
+        case 0xE5:
+            m_cpuState.set_sp(m_cpuState.get_sp()-1);
+            m_memoryBus.write(m_cpuState.get_sp(), m_cpuState.get_h());
+            m_cpuState.set_sp(m_cpuState.get_sp()-1);
+            m_memoryBus.write(m_cpuState.get_sp(), m_cpuState.get_l());
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+        // push AF to the stack
+        case 0xF5:
+            m_cpuState.set_sp(m_cpuState.get_sp()-1);
+            m_memoryBus.write(m_cpuState.get_sp(), m_cpuState.get_a());
+            m_cpuState.set_sp(m_cpuState.get_sp()-1);
+            m_memoryBus.write(m_cpuState.get_sp(), m_cpuState.get_f());
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+        //  pop BC from the stack
+        case 0xC1:
+            m_cpuState.set_c(m_memoryBus.read(m_cpuState.get_sp()));
+            m_cpuState.set_sp(m_cpuState.get_sp()+1);
+            m_cpuState.set_b(m_memoryBus.read(m_cpuState.get_sp()));
+            m_cpuState.set_sp(m_cpuState.get_sp()+1);
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+        //  pop DE from the stack
+        case 0xD1:
+            m_cpuState.set_e(m_memoryBus.read(m_cpuState.get_sp()));
+            m_cpuState.set_sp(m_cpuState.get_sp()+1);
+            m_cpuState.set_d(m_memoryBus.read(m_cpuState.get_sp()));
+            m_cpuState.set_sp(m_cpuState.get_sp()+1);
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+        //  pop HL from the stack
+        case 0xE1:
+            m_cpuState.set_l(m_memoryBus.read(m_cpuState.get_sp()));
+            m_cpuState.set_sp(m_cpuState.get_sp()+1);
+            m_cpuState.set_h(m_memoryBus.read(m_cpuState.get_sp()));
+            m_cpuState.set_sp(m_cpuState.get_sp()+1);
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+        //  pop AF from the stack
+        case 0xF1:
+            m_cpuState.set_f(m_memoryBus.read(m_cpuState.get_sp()));
+            m_cpuState.set_sp(m_cpuState.get_sp()+1);
+            m_cpuState.set_a(m_memoryBus.read(m_cpuState.get_sp()));
+            m_cpuState.set_sp(m_cpuState.get_sp()+1);
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+
+        // CALL (Subroutine)
+        case 0xCD: {
+
+
+            const std::uint16_t return_address = m_cpuState.get_pc()+3;
+
+            m_cpuState.set_pc((
+                m_memoryBus.read(m_cpuState.get_pc()+2)<<8)|m_memoryBus.read(m_cpuState.get_pc()+1));
+
+            m_cpuState.set_sp(m_cpuState.get_sp()-1);
+            // High Byte (shift 8 bytes right because during conversion the low bytes still remain)
+            m_memoryBus.write(m_cpuState.get_sp(), return_address>>8);
+            m_cpuState.set_sp(m_cpuState.get_sp()-1);
+            m_memoryBus.write(m_cpuState.get_sp(), return_address&0x00FF); // Low Byte
+            break;
+        }
+
+        // RET (return after Subroutine)
+        case 0xC9: {
+            m_cpuState.set_pc((m_memoryBus.read(m_cpuState.get_sp()+1)<<8)|m_memoryBus.read(m_cpuState.get_sp()));
+            m_cpuState.set_sp(m_cpuState.get_sp()+2);
+            break;
+        }
         default:
             throw std::runtime_error(std::format("Unsupported opcode 0x{:02X} at address 0x{:04X}", byte, m_cpuState.get_pc()));
     }
