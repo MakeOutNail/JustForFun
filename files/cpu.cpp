@@ -56,9 +56,18 @@ void Cpu::setOperand(std::uint8_t opcode) {
 
 
 
-void Cpu::arithmeticOperation(std::uint8_t opcode) {
+void Cpu::arithmeticOperation(std::uint8_t opcode, bool immediate=false) {
 
-    std::uint8_t operand = readOperand(opcode, 0b00000111);
+
+    std::uint8_t operand {};
+    if (!immediate) {
+        operand = readOperand(opcode, 0b00000111);
+    }
+    else {
+        m_cpuState.set_pc(m_cpuState.get_pc()+1);
+        operand = m_memoryBus.read(m_cpuState.get_pc());
+    }
+
 
     switch (opcode & 0b00111000) {
         // ADD A, ...
@@ -219,15 +228,46 @@ void Cpu::step() {
             m_cpuState.set_pc(m_cpuState.get_pc()+1);
             if(m_cpuState.get_flag(FlagType::Z)==false)m_cpuState.set_pc(m_cpuState.get_pc()+offset);
             break;
-            // 0x06 - LD B, n8 (load an 8-bit value into register B)
+
+        // 0x06 - LD B, n8 (load an 8-bit value into register B)
         }
         case 0x06:
             m_cpuState.set_b(m_memoryBus.read(m_cpuState.get_pc()+1));
             m_cpuState.set_pc(m_cpuState.get_pc()+2);
             break;
-            // 0x0E - LD C,n8 (load an 8 bit value into register C)
+        // 0x0E - LD C,n8 (load an 8 bit value into register C)
         case 0x0E:
             m_cpuState.set_c(m_memoryBus.read(m_cpuState.get_pc()+1));
+            m_cpuState.set_pc(m_cpuState.get_pc()+2);
+            break;
+        // 0x16 - LD D,n8 (load an 8 bit value into register D)
+        case 0x16:
+            m_cpuState.set_d(m_memoryBus.read(m_cpuState.get_pc()+1));
+            m_cpuState.set_pc(m_cpuState.get_pc()+2);
+            break;
+            // 0x1E - LD E,n8 (load an 8 bit value into register E)
+        case 0x1E:
+            m_cpuState.set_e(m_memoryBus.read(m_cpuState.get_pc()+1));
+            m_cpuState.set_pc(m_cpuState.get_pc()+2);
+            break;
+            // 0x26 - LD H,n8 (load an 8 bit value into register H)
+        case 0x26:
+            m_cpuState.set_h(m_memoryBus.read(m_cpuState.get_pc()+1));
+            m_cpuState.set_pc(m_cpuState.get_pc()+2);
+            break;
+            // 0x2E - LD L,n8 (load an 8 bit value into register L)
+        case 0x2E:
+            m_cpuState.set_l(m_memoryBus.read(m_cpuState.get_pc()+1));
+            m_cpuState.set_pc(m_cpuState.get_pc()+2);
+            break;
+            // 0x36 - LD HL,n8 (load an 8 bit value into memory location of HL)
+        case 0x36:
+            m_memoryBus.write(m_cpuState.get_hl(), m_memoryBus.read(m_cpuState.get_pc()+1));
+            m_cpuState.set_pc(m_cpuState.get_pc()+2);
+            break;
+            // 0x3E - LD A,n8 (load an 8 bit value into register A)
+        case 0x3E:
+            m_cpuState.set_a(m_memoryBus.read(m_cpuState.get_pc()+1));
             m_cpuState.set_pc(m_cpuState.get_pc()+2);
             break;
             // 0x04 - INC B (increment register B)
@@ -239,6 +279,76 @@ void Cpu::step() {
             m_cpuState.set_flag(FlagType::N, false); // sets N (addition is false and substraction is true)
             m_cpuState.set_pc(m_cpuState.get_pc()+1);
             break;
+            // 0x0C - INC C (increment register C)
+        case 0x0C:
+            // checks if the lower four bits overflow and changes the half-carry flag
+            (m_cpuState.get_c() & 0b00001111) == 0b00001111 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_c(m_cpuState.get_c()+1);
+            // checks if the result is zero (256 -> 0) and changes the zero flag
+            m_cpuState.get_c()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, false); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x14 - INC D (increment register D)
+        case 0x14:
+            // checks if the lower four bits overflow and changes the half-carry flag
+            (m_cpuState.get_d() & 0b00001111) == 0b00001111 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_d(m_cpuState.get_d()+1);
+            // checks if the result is zero (256 -> 0) and changes the zero flag
+            m_cpuState.get_d()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, false); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x1C - INC E (increment register E)
+        case 0x1C:
+            // checks if the lower four bits overflow and changes the half-carry flag
+            (m_cpuState.get_e() & 0b00001111) == 0b00001111 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_e(m_cpuState.get_e()+1);
+            // checks if the result is zero (256 -> 0) and changes the zero flag
+            m_cpuState.get_e()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, false); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x24 - INC H (increment register H)
+        case 0x24:
+            // checks if the lower four bits overflow and changes the half-carry flag
+            (m_cpuState.get_h() & 0b00001111) == 0b00001111 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_h(m_cpuState.get_h()+1);
+            // checks if the result is zero (256 -> 0) and changes the zero flag
+            m_cpuState.get_h()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, false); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x2C - INC L (increment register L)
+        case 0x2C:
+            // checks if the lower four bits overflow and changes the half-carry flag
+            (m_cpuState.get_l() & 0b00001111) == 0b00001111 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_l(m_cpuState.get_l()+1);
+            // checks if the result is zero (256 -> 0) and changes the zero flag
+            m_cpuState.get_l()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, false); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x34 - INC [HL] (increment the byte at memory address HL)
+        case 0x34:
+            // checks if the lower four bits overflow and changes the half-carry flag
+            (m_memoryBus.read(m_cpuState.get_hl()) & 0b00001111) == 0b00001111 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_memoryBus.write(m_cpuState.get_hl(), m_memoryBus.read(m_cpuState.get_hl())+1);
+            // checks if the result is zero (256 -> 0) and changes the zero flag
+            m_memoryBus.read(m_cpuState.get_hl())==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, false); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x3C - INC A (increment register A)
+        case 0x3C:
+            // checks if the lower four bits overflow and changes the half-carry flag
+            (m_cpuState.get_a() & 0b00001111) == 0b00001111 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_a(m_cpuState.get_a()+1);
+            // checks if the result is zero (256 -> 0) and changes the zero flag
+            m_cpuState.get_a()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, false); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
             // 0x0D - DEC C (decrease register C)
         case 0x0D:
             (m_cpuState.get_c() & 0b00001111) == 0 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
@@ -247,10 +357,60 @@ void Cpu::step() {
             m_cpuState.set_flag(FlagType::N, true); // sets N (addition is false and substraction is true)
             m_cpuState.set_pc(m_cpuState.get_pc()+1);
             break;
-            // LD A, n8; LOAD 8 BIT INTO REGISTER A
-        case 0x3E:
+            // 0x05 - DEC B (decrease register B)
+        case 0x05:
+            (m_cpuState.get_b() & 0b00001111) == 0 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_b(m_cpuState.get_b()-1);
+            m_cpuState.get_b()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, true); // sets N (addition is false and substraction is true)
             m_cpuState.set_pc(m_cpuState.get_pc()+1);
-            m_cpuState.set_a(m_memoryBus.read(m_cpuState.get_pc()));
+            break;
+            // 0x15 - DEC D (decrease register D)
+        case 0x15:
+            (m_cpuState.get_d() & 0b00001111) == 0 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_d(m_cpuState.get_d()-1);
+            m_cpuState.get_d()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, true); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x1D - DEC E (decrease register E)
+        case 0x1D:
+            (m_cpuState.get_e() & 0b00001111) == 0 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_e(m_cpuState.get_e()-1);
+            m_cpuState.get_e()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, true); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x25 - DEC H (decrease register H)
+        case 0x25:
+            (m_cpuState.get_h() & 0b00001111) == 0 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_h(m_cpuState.get_h()-1);
+            m_cpuState.get_h()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, true); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x2D - DEC L (decrease register L)
+        case 0x2D:
+            (m_cpuState.get_l() & 0b00001111) == 0 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_l(m_cpuState.get_l()-1);
+            m_cpuState.get_l()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, true); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x35 - DEC [HL] (decrease the byte at memory address HL)
+        case 0x35:
+            (m_memoryBus.read(m_cpuState.get_hl()) & 0b00001111) == 0 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_memoryBus.write(m_cpuState.get_hl(), m_memoryBus.read(m_cpuState.get_hl())-1);
+            m_memoryBus.read(m_cpuState.get_hl())==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, true); // sets N (addition is false and substraction is true)
+            m_cpuState.set_pc(m_cpuState.get_pc()+1);
+            break;
+            // 0x3D - DEC A (decrease register A)
+        case 0x3D:
+            (m_cpuState.get_a() & 0b00001111) == 0 ? m_cpuState.set_flag(FlagType::H, true) : m_cpuState.set_flag(FlagType::H, false);
+            m_cpuState.set_a(m_cpuState.get_a()-1);
+            m_cpuState.get_a()==0 ? m_cpuState.set_flag(FlagType::Z, true) : m_cpuState.set_flag(FlagType::Z, false);
+            m_cpuState.set_flag(FlagType::N, true); // sets N (addition is false and substraction is true)
             m_cpuState.set_pc(m_cpuState.get_pc()+1);
             break;
             // LD HL n16; LOAD 16 BIT INTO REGISTER HL
@@ -355,6 +515,19 @@ void Cpu::step() {
             m_cpuState.set_sp(m_cpuState.get_sp()+2);
             break;
         }
+
+        // (ADD, ADC, SUB, SBC, AND, XOR, OR, CP) A, n8
+        case 0xC6:
+        case 0xCE:
+        case 0xD6:
+        case 0xDE:
+        case 0xE6:
+        case 0xEE:
+        case 0xF6:
+        case 0xFE:
+            arithmeticOperation(byte, true);
+            // No increment needed, because functions does it!
+            break;
         default:
             throw std::runtime_error(std::format("Unsupported opcode 0x{:02X} at address 0x{:04X}", byte, m_cpuState.get_pc()));
     }

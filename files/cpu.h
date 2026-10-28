@@ -15,7 +15,7 @@ private:
     CpuState m_cpuState;
     std::uint8_t readOperand(std::uint8_t opcode, std::uint8_t mask) const;
     void setOperand(std::uint8_t opcode);
-    void arithmeticOperation(std::uint8_t opcode);
+    void arithmeticOperation(std::uint8_t opcode, bool immediate);
     void loadOperation(std::uint8_t opcode);
 
 };
